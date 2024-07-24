@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "ContentXtractor": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7147"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "DockerfileRunArguments": "--init",
+      "httpPort": 33606,
+      "useSSL": false
+    }
+  }
+}
