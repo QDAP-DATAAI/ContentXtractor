@@ -14,12 +14,14 @@ namespace ContentXtractor.Extract
         private const string PdfContentType = "application/pdf";
         private static readonly string[] AllowedContentType = ["text/html", "text/plain", PdfContentType];
 
-        public static async Task<ExtractResult> Extract(string url, bool headless = true, ViewPortOptions? viewPortOptions = default, bool disableLinks = true, bool returnRawHtml = false, WaitUntilNavigation? waitUntil = default, int? readingModeTimeout = default, ILoggerFactory? loggerFactory = default, CancellationToken cancellationToken = default)
+        public static async Task<ExtractResult> Extract(string? url, bool headless = true, ViewPortOptions? viewPortOptions = default, bool disableLinks = true, bool returnRawHtml = false, WaitUntilNavigation? waitUntil = default, int? readingModeTimeout = default, ILoggerFactory? loggerFactory = default, CancellationToken cancellationToken = default)
         {
             var options = MakeLaunchOptions(headless);
 
             try
             {
+                ValidateUrl(url);
+
                 using var browser = await Puppeteer.LaunchAsync(options, loggerFactory);
                 using var _ = cancellationToken.Register(browser.Dispose);
 
@@ -101,7 +103,20 @@ namespace ContentXtractor.Extract
             }
         }
 
-        public record ExtractResult(bool Success, string? RawHtml, string Markdown, bool ExtractedFromReadingMode, string[] Urls, RequestFinishedResult RequestResult);
+        private static void ValidateUrl(string? url)
+        {
+            ArgumentNullException.ThrowIfNullOrWhiteSpace(url, nameof(url));
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                throw new ArgumentException("Invalid URL.", nameof(url));
+            }
+
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new ArgumentException($"Only {Uri.UriSchemeHttp} and {Uri.UriSchemeHttps} URLs are allowed.", nameof(url));
+            }
+        }
 
         private static LaunchOptions MakeLaunchOptions(bool headless)
         {
@@ -250,4 +265,6 @@ namespace ContentXtractor.Extract
     }
 
     public record RequestFinishedResult(string Url, string ContentType, bool Redirected, HttpStatusCode StatusCode);
+
+    public record ExtractResult(bool Success, string? RawHtml, string Markdown, bool ExtractedFromReadingMode, string[] Urls, RequestFinishedResult RequestResult);
 }
