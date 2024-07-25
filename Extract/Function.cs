@@ -18,6 +18,8 @@ namespace ContentXtractor.Extract
         [Function("extract")]
         public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest request)
         {
+            var logger = loggerFactory.CreateLogger<Function>();
+
             try
             {
                 var model = await JsonSerializer.DeserializeAsync<RequestBodyModel>(request.Body, jsonSerializerOptions, request.HttpContext.RequestAborted) ?? throw new ArgumentNullException(nameof(request.Body));
@@ -30,6 +32,8 @@ namespace ContentXtractor.Extract
             }
             catch (NavigationException ex)
             {
+                logger.LogError(ex, "Navigation error");
+
                 return new BadRequestObjectResult(new
                 {
                     error = ex.Message,
@@ -37,6 +41,8 @@ namespace ContentXtractor.Extract
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error");
+
                 return new ObjectResult(new
                 {
                     error = ex.Message,
